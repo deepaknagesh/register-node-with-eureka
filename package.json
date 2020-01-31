@@ -1,0 +1,13 @@
+{
+  "name": "register-node-with-eureka",
+  "version": "1.0.0",
+  "description": "Node module to register node services with Eureka service registry.",
+  "main": "index.js",
+  "repository": "https://github.com/deepaknagesh/register-node-with-eureka.git",
+  "author": "Deepak N <deepaknagesh05@gmail.com>",
+  "license": "MIT",
+  "dependencies": {
+    "ip": "^1.1.5",
+    "request": "^2.88.0"
+  }
+}
