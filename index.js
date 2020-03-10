@@ -65,7 +65,6 @@ module.exports = {
             throw new Error("Call back is required to unregister the service from Eureka.");
         }
         console.log(`Unregistering from Eureka.`);
-        console.log(beatsUrl);
         request.del({
             headers,
             url: beatsUrl
