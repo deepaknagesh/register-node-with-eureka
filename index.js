@@ -7,51 +7,77 @@ const dataCenterInfo = Object.freeze({
     name: `MyOwn`
 });
 const headers = { 'content-type': 'application/json' };
+let registerUrl;
+let beatsUrl;
 
 module.exports = {
-    registerWithEureka: (eurekaService = "http://localhost:8761", appName = "node-service", port = "3000") => {
-        const registerUrl = `${eurekaService}/apps/${appName}`;
-        const heartBeatUrl = `${eurekaService}/apps/${appName}/${appName}-${port}`;
+    register: (eurekaService = "http://localhost:8761", appName = "node-service", port = "3000") => {
+        const ipAddress = ip.address();
+        const instanceId = `${appName}-${port}`;
+        // eurekaService = `${eurekaService}/eureka/v2`;
+        registerUrl = `${eurekaService}/apps/${appName}`;
+        beatsUrl = `${eurekaService}/apps/${appName}/${instanceId}`;
         console.log(`Registering ${appName} with Eureka`);
+        const body = JSON.stringify({
+            instance: {
+                hostName: `localhost`,
+                instanceId: instanceId,
+                vipAddress: `${appName}`,
+                app: `${appName.toUpperCase()}`,
+                ipAddr: ipAddress,
+                status: `UP`,
+                port: {
+                    $: port,
+                    "@enabled": true
+                },
+                dataCenterInfo
+            }
+        });
+
         request.post({
             headers,
             url: registerUrl,
-            body: JSON.stringify({
-                instance: {
-                    hostName: `localhost`,
-                    instanceId: `${appName}-${port}`,
-                    vipAddress: `${appName}`,
-                    app: `${appName.toUpperCase()}`,
-                    ipAddr: ip.address(),
-                    status: `UP`,
-                    port: {
-                        $: port,
-                        "@enabled": true
-                    },
-                    dataCenterInfo
-                }
-            })
-        },
-            (error, response, body) => {
-                if (!error) {
-                    console.log(`Registered with Eureka.`);
-                    setInterval(() => {
-                        request.put({
-                            headers,
-                            url: heartBeatUrl
-                        }, (error, response, body => {
-                            if (error) {
-                                console.error('Sending heartbeat to Eureka failed.');
-                            } else {
-                                console.log('Successfully sent heartbeat to Eureka.');
-                            }
-                        }));
-                    }, 50 * 1000);
+            body
+        }, (error, response, body) => {
+            if (!error) {
+                console.log(`Registered with Eureka.`);
+                setInterval(() => {
+                    request.put({
+                        headers,
+                        url: beatsUrl
+                    }, (error, response, body => {
+                        if (error) {
+                            console.error('Sending heartbeat to Eureka failed.');
+                        } else {
+                            console.log('Successfully sent heartbeat to Eureka.');
+                        }
+                    }));
+                }, 50 * 1000);
 
-                } else {
-                    console.error(`Not registered with eureka due to: ${error}`);
-                    console.error(`Eureka url: ${eurekaService}`);
-                }
-            });
+            } else {
+                console.error(`Not registered with eureka due to: ${error}`);
+                console.error(`Eureka url: ${eurekaService}`);
+            }
+        });
+    },
+    unregister: (cb) => {
+        if (!cb || typeof cb !== "function") {
+            throw new Error("Call back is required to unregister the service from Eureka.");
+        }
+        console.log(`Unregistering from Eureka.`);
+        console.log(beatsUrl);
+        request.del({
+            headers,
+            url: beatsUrl
+        }, (error, response, body) => {
+            if (error) {
+                console.error('Unregistering from Eureka failed.');
+                error = new Error('Unregistering from Eureka failed.');
+            } else {
+                console.log('Successfully unregistered from Eureka.');
+                response = 'Successfully unregistered from Eureka.';
+            }
+            cb(error, response);
+        });
     }
 };
