@@ -10,8 +10,15 @@ const headers = { 'content-type': 'application/json' };
 let registerUrl;
 let beatsUrl;
 
+const defaults = Object.freeze({
+    interval: 50 * 1000
+});
+
 module.exports = {
-    register: (eurekaService = "http://localhost:8761", appName = "node-service", port = "3000") => {
+    register: (eurekaService = "http://localhost:8761", appName = "node-service", port = "3000", options = {}) => {
+        options = { ...defaults, ...options };
+
+        const { interval } = options;
         const ipAddress = ip.address();
         const instanceId = `${appName}-${port}`;
         // eurekaService = `${eurekaService}/eureka/v2`;
@@ -52,7 +59,7 @@ module.exports = {
                             console.log('Successfully sent heartbeat to Eureka.');
                         }
                     }));
-                }, 50 * 1000);
+                }, interval);
 
             } else {
                 console.error(`Not registered with eureka due to: ${error}`);
